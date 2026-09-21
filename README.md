@@ -162,7 +162,9 @@ jev-ads-analysis/
 ├── docs/
 │   ├── 01-定位与边界.md
 │   ├── 02-分析载体-飞书多维表格.md
-│   └── 03-与上游仓库的关系.md
+│   ├── 03-与上游仓库的关系.md
+│   ├── 04-阈值标定.md            # 45 词影子对照与阈值曲线
+│   └── 05-字段说明.md            # 置信度 / 紧迫度 / 无效花费概率 的语义
 ├── examples/input-sample.csv
 └── LICENSE · CONTRIBUTING.md · CHANGELOG.md · SECURITY.md · NOTICE.md
 ```
@@ -201,5 +203,6 @@ jev-ads-analysis/
 原创内容 [MIT](LICENSE)；第三方来源见 [NOTICE.md](NOTICE.md)。
 
 > 本项目与 Amazon.com, Inc.、TypeSafe AI 均无隶属或背书关系。
+
 
 

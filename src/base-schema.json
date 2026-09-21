@@ -1,0 +1,313 @@
+[
+  {
+    "name": "无效花费概率",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 2,
+      "thousands_separator": false,
+      "type": "plain"
+    },
+    "description": "Jev 判断「该词到目前的花费确实属于无效支出」的概率（Noul 问法，0–1，该问法没有 confidence）。【用途：安全闸门】>0.80 且动作是「否定」或「暂停」时强制转人工 —— 这两个动作不可逆。【实测】与订单数单调递减：0 单≈0.85 / 2 单≈0.47 / 4+ 单≈0.17。注意「动作=保持」与「花费可能无效」可以同时成立：样本不足与已花无效并不矛盾。"
+  },
+  {
+    "name": "点击",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 0,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "曝光",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 0,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "站点",
+    "type": "select",
+    "multiple": false,
+    "options": [
+      {
+        "name": "US",
+        "hue": "Lime"
+      },
+      {
+        "name": "UK",
+        "hue": "Orange"
+      },
+      {
+        "name": "DE",
+        "hue": "Orange"
+      },
+      {
+        "name": "JP",
+        "hue": "Purple"
+      }
+    ]
+  },
+  {
+    "name": "Jev置信度",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 2,
+      "thousands_separator": false,
+      "type": "plain"
+    },
+    "description": "Jev 对选中动作的确定程度（0–1，越高越确定）。【用途：门控】低于分动作阈值即转人工复核：保持 0.60 / 降价 0.80 / 加价 0.85 / 否定 0.85 / 暂停 0.90。【易混淆】confidence ≠ 选项概率：probabilities 描述选项之间的相对可能性，confidence 描述模型对整个判断的把握，两者不可互相换算。【实测】与规则层一致组均值 0.820，分歧组 0.555。"
+  },
+  {
+    "name": "运行天数",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 0,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "Jev紧迫度",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 0,
+      "thousands_separator": false,
+      "type": "plain"
+    },
+    "description": "Jev 认为这个判断该多快处理（Score 问法，0–2 连续值，非整数档）。标尺：0=放着不管 / 1=本周内处理 / 2=今天就该处理。【用途：排优先级，不用于门控】官方提醒：score 的数值标定较弱，只适合排序与分档，不要用它插值还原具体数值。【实测】4 条分歧案例（ACoS 为盈亏平衡线 2–3.6 倍）紧迫度全部 1.82–1.90。"
+  },
+  {
+    "name": "目标ACOS",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 4,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "盈亏平衡ACOS",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 4,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "关键词",
+    "type": "text"
+  },
+  {
+    "name": "销售额",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 2,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "处置",
+    "type": "select",
+    "multiple": false,
+    "options": [
+      {
+        "name": "自动执行",
+        "hue": "Green"
+      },
+      {
+        "name": "人工复核",
+        "hue": "Orange"
+      },
+      {
+        "name": "待标定",
+        "hue": "Gray"
+      }
+    ]
+  },
+  {
+    "name": "可接受CPC",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 4,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "规则层优先级",
+    "type": "select",
+    "multiple": false,
+    "options": [
+      {
+        "name": "P0",
+        "hue": "Red"
+      },
+      {
+        "name": "P1",
+        "hue": "Orange"
+      },
+      {
+        "name": "P2",
+        "hue": "Blue"
+      }
+    ]
+  },
+  {
+    "name": "订单",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 0,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "花费",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 2,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "动态点击阈值",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 1,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "规则层依据",
+    "type": "text"
+  },
+  {
+    "name": "Jev动作",
+    "type": "select",
+    "multiple": false,
+    "options": [
+      {
+        "name": "加价",
+        "hue": "Lime"
+      },
+      {
+        "name": "降价",
+        "hue": "Lime"
+      },
+      {
+        "name": "暂停",
+        "hue": "Purple"
+      },
+      {
+        "name": "保持",
+        "hue": "Red"
+      },
+      {
+        "name": "否定",
+        "hue": "Red"
+      },
+      {
+        "name": "未接入",
+        "hue": "Wathet"
+      }
+    ]
+  },
+  {
+    "name": "当前出价",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 2,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  },
+  {
+    "name": "规则层动作",
+    "type": "select",
+    "multiple": false,
+    "options": [
+      {
+        "name": "加价",
+        "hue": "Green"
+      },
+      {
+        "name": "降价",
+        "hue": "Orange"
+      },
+      {
+        "name": "暂停",
+        "hue": "Red"
+      },
+      {
+        "name": "保持",
+        "hue": "Blue"
+      },
+      {
+        "name": "否定",
+        "hue": "Red"
+      }
+    ]
+  },
+  {
+    "name": "匹配方式",
+    "type": "select",
+    "multiple": false,
+    "options": [
+      {
+        "name": "自动",
+        "hue": "Wathet"
+      },
+      {
+        "name": "广泛",
+        "hue": "Wathet"
+      },
+      {
+        "name": "词组",
+        "hue": "Green"
+      },
+      {
+        "name": "精准",
+        "hue": "Blue"
+      },
+      {
+        "name": "商品投放",
+        "hue": "Lime"
+      }
+    ]
+  },
+  {
+    "name": "是否分歧",
+    "type": "checkbox"
+  },
+  {
+    "name": "实测ACOS",
+    "type": "number",
+    "style": {
+      "percentage": false,
+      "precision": 4,
+      "thousands_separator": false,
+      "type": "plain"
+    }
+  }
+]
