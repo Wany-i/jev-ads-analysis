@@ -45,10 +45,25 @@ ACTION_EN2CN = {
     "keep": "保持", "negate": "否定", "other": "保持",
 }
 
+# 判断口径必须写在 instructions 里，不能只写在 state（或干脆不写）。
+# 依据：jev-decision-layer 实测 —— 只删掉 instructions 里的口径，同一判断的
+# noul 从 0.59 掉到 0.33。我们第一版只写了「按目标 ACOS 口径」，没说口径是什么，
+# 结果 12 个词里 10 个被判「暂停」（连 ACoS 26% 的健康词也是），分歧率 91.7%。
+# 下面把规则层的判据显式写进口径，但把「怎么权衡」留给模型。
+INSTRUCTIONS_ACTION = (
+    "判断这个词下一步最该做的动作。判断口径（按优先级依次比较）："
+    "① 点击已达「动态点击阈值」且订单为 0 —— 属无效花费，选 negate 或 pause；"
+    "② 实测ACOS 高于「盈亏平衡ACOS」且点击 ≥ 20 —— 在亏钱，选 lower；严重偏高选 pause；"
+    "③ 实测ACOS 介于「目标ACOS」与「盈亏平衡ACOS」之间 —— 效率可用但未达标，选 lower；"
+    "④ 实测ACOS 低于「目标ACOS」的 0.7 倍，且曝光受限 —— 效率优秀，选 raise；"
+    "⑤ 点击少于「动态点击阈值」且订单为 0 —— 样本不足，选 keep，不要否定也不要暂停；"
+    "⑥ 判断依据不足或以上都不贴合时，选 other。"
+)
+
 QUESTIONS: dict[str, Any] = {
     "动作": {
         "type": "choice",
-        "instructions": "按目标 ACOS 口径，这个词下一步最该做的动作是哪一个",
+        "instructions": INSTRUCTIONS_ACTION,
         "criteria": {
             "raise": "提高出价以抢更多流量",
             "lower": "降低出价",
@@ -112,12 +127,29 @@ def _call(state: dict, *, timeout: int = 120) -> dict:
         },
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode("utf-8", "replace")[:400]
-        raise RuntimeError(f"Jev 调用失败 HTTP {e.code}: {detail}") from e
+    # 网关偶发 5xx（实测遇到 Cloudflare 520）不值得直接失败：
+    # 对 5xx / 429 / 网络超时做有限退避重试；4xx（除 429）是请求本身的问题，不重试。
+    import time as _time
+    last = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", "replace")[:300]
+            if e.code >= 500 or e.code == 429:
+                last = f"HTTP {e.code}: {detail}"
+                if attempt < 2:
+                    _time.sleep(2 * (attempt + 1))
+                    continue
+            raise RuntimeError(f"Jev 调用失败 HTTP {e.code}: {detail}") from e
+        except (urllib.error.URLError, TimeoutError) as e:
+            last = str(e)
+            if attempt < 2:
+                _time.sleep(2 * (attempt + 1))
+                continue
+            raise RuntimeError(f"Jev 调用失败（网络）: {e}") from e
+    raise RuntimeError(f"Jev 调用失败，重试 3 次仍不成功: {last}")
 
 
 def judge(term: str, state: dict, *, dry_run: bool = True) -> JevVerdict:
@@ -135,12 +167,26 @@ def judge(term: str, state: dict, *, dry_run: bool = True) -> JevVerdict:
     conf = float(act.get("confidence", 0.0) or 0.0)
 
     waste = answers.get("无效花费", {}) or {}
-    waste_p = waste.get("probability")
-    waste_p = float(waste_p) if waste_p is not None else None
+    # Noul 的返回值就在 "noul" 字段里（实测原始响应：{"type":"noul","noul":0.88}），
+    # 不是 probability —— 之前读错字段名，导致这个值一直是 None。
+    waste_p = None
+    for k in ("noul", "probability", "value"):
+        if waste.get(k) is not None:
+            try:
+                waste_p = float(waste[k]); break
+            except (TypeError, ValueError):
+                pass
 
     urg = answers.get("紧迫度", {}) or {}
-    urg_v = urg.get("score")
-    urg_v = float(urg_v) if urg_v is not None else None
+    # Score 的返回值字段名在不同版本间可能是 score / level / value，
+    # 逐个尝试，避免因字段名不匹配而静默拿到 None（第一版就是这个 bug）。
+    urg_v = None
+    for k in ("score", "level", "value", "rating"):
+        if urg.get(k) is not None:
+            try:
+                urg_v = float(urg[k]); break
+            except (TypeError, ValueError):
+                pass
 
     return JevVerdict(term, cn, conf, urg_v, waste_p, _gate(cn, conf, waste_p))
 

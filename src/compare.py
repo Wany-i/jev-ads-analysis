@@ -27,6 +27,10 @@ class Comparison:
     jev_action: str
     jev_confidence: float
     jev_gate: str
+    # 这两个字段解析于 jev_shadow.JevVerdict，但此前没有透传到 Comparison，
+    # 导致最终输出里永远是 None（实跑发现的 bug：解析对了但数据在中间环节丢了）
+    jev_urgency: float | None
+    jev_waste_prob: float | None
     diverged: bool
     disposition: str          # 自动执行 / 人工复核 / 待标定
     note: str
@@ -40,6 +44,8 @@ class Comparison:
             "Jev动作": self.jev_action,
             "Jev置信度": round(self.jev_confidence, 4) if self.jev_confidence else None,
             "Jev门控": self.jev_gate,
+            "Jev紧迫度": self.jev_urgency,
+            "无效花费概率": self.jev_waste_prob,
             "是否分歧": self.diverged,
             "处置": self.disposition,
             "备注": self.note,
@@ -73,6 +79,8 @@ def compare(rule: Verdict, jev: JevVerdict) -> Comparison:
             jev_action=jev.action,
             jev_confidence=jev.confidence,
             jev_gate=jev.gate,
+            jev_urgency=jev.urgency,
+            jev_waste_prob=jev.waste_prob,
             diverged=False,
             disposition="待标定",
             note=jev.note or "Jev 层未接入，仅使用规则层结论",
@@ -106,6 +114,8 @@ def compare(rule: Verdict, jev: JevVerdict) -> Comparison:
         jev_action=jev.action,
         jev_confidence=jev.confidence,
         jev_gate=jev.gate,
+        jev_urgency=jev.urgency,
+        jev_waste_prob=jev.waste_prob,
         diverged=diverged,
         disposition=disposition,
         note=note,
