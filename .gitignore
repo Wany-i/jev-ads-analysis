@@ -1,0 +1,21 @@
+# OS
+.DS_Store
+Thumbs.db
+# Editors
+.vscode/
+.idea/
+*.swp
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+# 运行时产物
+output/
+*.local.json
+*.local.csv
+# 凭据
+.env
+.env.*
+credentials*
+*.key
