@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from compare import compare, summarize              # noqa: E402
 from jev_shadow import judge_all as jev_judge_all   # noqa: E402
 from rule_layer import judge_all as rule_judge_all  # noqa: E402
-from state_builder import Economics, load_rows      # noqa: E402
+from state_builder import Economics, load_rows, MATCH_TYPE_CN  # noqa: E402
 
 
 def run(args: argparse.Namespace) -> dict:
@@ -57,7 +57,8 @@ def run(args: argparse.Namespace) -> dict:
         row = {
             "关键词": r.term,
             "站点": "US",
-            "匹配方式": r.match_type or "未知",
+                # 归一成中文，与多维表格的 select 选项对齐
+                "匹配方式": MATCH_TYPE_CN.get((r.match_type or "").lower(), r.match_type or "未知"),
             "曝光": int(r.impressions),
             "点击": int(r.clicks),
             "花费": round(r.spend, 2),
@@ -137,3 +138,4 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
