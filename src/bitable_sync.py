@@ -21,23 +21,40 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# Windows 上优先取 .cmd/.exe，避免解析到无扩展名的 shell 包装脚本
-if os.name == "nt":
-    CLI = (shutil.which("lark-cli.cmd") or shutil.which("lark-cli.exe")
-           or shutil.which("lark-cli"))
-else:
-    CLI = shutil.which("lark-cli")
+def _resolve_cli() -> str | None:
+    """定位 lark-cli 可执行文件。
+
+    Windows 上**必须优先用原生 .exe**：`.cmd` 会经 cmd.exe 二次解析命令行，
+    长 JSON 参数（我们的 create_records 载荷）会被引号规则破坏，
+    表现为 "The system cannot find the file specified"。
+    """
+    if os.name == "nt":
+        exe = shutil.which("lark-cli.exe")
+        if exe:
+            return exe
+        cmd_path = shutil.which("lark-cli.cmd") or shutil.which("lark-cli")
+        if cmd_path:
+            # npm 全局布局：<prefix>\lark-cli.cmd -> <prefix>\node_modules\@larksuite\cli\bin\lark-cli.exe
+            cand = Path(cmd_path).parent / "node_modules" / "@larksuite" / "cli" / "bin" / "lark-cli.exe"
+            if cand.is_file():
+                return str(cand)
+            return cmd_path
+        return None
+    return shutil.which("lark-cli")
+
+
+CLI = _resolve_cli()
 
 # 同步到 Base 的字段（与建表 schema 对齐）
 SYNC_FIELDS = [
     "关键词", "站点", "匹配方式", "曝光", "点击", "花费", "销售额", "订单",
     "运行天数", "当前出价", "目标ACOS", "实测ACOS", "盈亏平衡ACOS", "可接受CPC",
-    "动态点击阈值", "规则层动作", "规则层依据", "Jev动作", "Jev置信度",
+    "动态点击阈值", "规则层动作", "规则层依据", "规则层优先级", "Jev动作", "Jev置信度",
     "Jev紧迫度", "无效花费概率", "是否分歧", "处置",
 ]
 
 # CellValue 类型约定（见 lark-base-cell-value 参考）
-SELECT_FIELDS = {"站点", "匹配方式", "规则层动作", "Jev动作", "处置"}
+SELECT_FIELDS = {"站点", "匹配方式", "规则层动作", "规则层优先级", "Jev动作", "处置"}
 RATIO_FIELDS = {"目标ACOS", "实测ACOS", "盈亏平衡ACOS"}
 
 
@@ -112,3 +129,5 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+

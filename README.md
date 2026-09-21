@@ -89,7 +89,7 @@ smoothie maker            点击 32 | 阈值 11 | 降价 | ACoS 32.0% 介于目�
 juicer machine            点击 60 | 阈值 30 | 降价 | ACoS 90.0% > 盈亏平衡线 33.7%，点击 60
 ```
 
-### 分析载体：飞书多维表格
+### 分析载体：飞书多维表格（已跑通实例）
 
 ```bash
 python src/bitable_sync.py \
@@ -98,6 +98,9 @@ python src/bitable_sync.py \
 ```
 
 去掉 `--dry-run` 即写入（需要 `lark-cli` 已登录且具备 `base:record:create` 等权限）。
+
+**已验证实例**：<https://cathypromotion.feishu.cn/base/V2XMb01AfahmKYsDDahcIXiZn3f>
+（24 字段 / 7 条示例记录 / 3 个筛选视图：待复核 · 分歧案例 · P0止血）
 
 **为什么选多维表格做分析载体**：
 
@@ -195,3 +198,4 @@ jev-ads-analysis/
 原创内容 [MIT](LICENSE)；第三方来源见 [NOTICE.md](NOTICE.md)。
 
 > 本项目与 Amazon.com, Inc.、TypeSafe AI 均无隶属或背书关系。
+
