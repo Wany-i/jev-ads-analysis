@@ -19,3 +19,6 @@ output/
 .env.*
 credentials*
 *.key
+
+# 发布构建产物
+dist/
