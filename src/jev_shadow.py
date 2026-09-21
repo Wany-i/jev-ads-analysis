@@ -165,6 +165,17 @@ def judge(term: str, state: dict, *, dry_run: bool = True) -> JevVerdict:
         )
 
     resp = _call(state)
+    return parse_answers(term, resp)
+
+
+def parse_answers(term: str, resp: dict) -> JevVerdict:
+    """把 Jev 原始响应解析成 JevVerdict（纯函数，不联网，便于单测）。
+
+    这里集中了三个曾经踩过的字段名坑：
+    - Noul 的值在 "noul" 字段，不是 "probability"
+    - Score 的值可能是 score / level / value / rating
+    - urgency 与 waste_prob 必须一路传到 JevVerdict，不能在中途丢
+    """
     answers = resp.get("answers", {}) or {}
     act = answers.get("动作", {}) or {}
     cn = ACTION_EN2CN.get(str(act.get("choice", "")).lower(), "保持")
@@ -193,8 +204,6 @@ def judge(term: str, state: dict, *, dry_run: bool = True) -> JevVerdict:
                 pass
 
     return JevVerdict(term, cn, conf, urg_v, waste_p, _gate(cn, conf, waste_p))
-
-
 def judge_all(rows: list[dict], *, dry_run: bool = True) -> list[JevVerdict]:
     """rows: [{"term": ..., "state": {...}}, ...]"""
     return [judge(r["term"], r["state"], dry_run=dry_run) for r in rows]

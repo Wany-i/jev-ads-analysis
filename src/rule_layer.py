@@ -47,22 +47,26 @@ def judge(row: TermRow, econ: Economics, target_acos: float) -> Verdict:
             "P0",
         )
 
-    # —— P0：ACoS 越过盈亏平衡线 ——
+    # —— P1：转化速率达标 -> 收割（**必须排在「ACoS 超标就降价」之前**）——
+    # 依据 verification.md V17：稳定转化但 ACoS 差的词，恰恰最需要独立活动，
+    # 因为「现在是共享出价，你没法单独调它的价」。先降价只是治标。
+    orders_per_week = row.orders / max(row.running_days, 1) * 7
+    if orders_per_week >= 2:
+        return Verdict(
+            row.term, "加价",
+            f"转化速率 {orders_per_week:.1f} 单/周 ≥ 2，建议独立 Exact 活动并按自身经济性出价"
+            f"（该词 ACoS {row.acos:.1%}"
+            + (f"，已超盈亏平衡线 {be:.1%}，独立后需先压价" if row.acos > be else "")
+            + "）",
+            "P1",
+        )
+
+    # —— P0：ACoS 越过盈亏平衡线（未达收割速率时）——
     if row.acos >= 0 and row.acos > be and row.clicks >= 20:
         return Verdict(
             row.term, "降价",
             f"ACoS {row.acos:.1%} > 盈亏平衡线 {be:.1%}，点击 {int(row.clicks)}（≥20 最小样本）",
             "P0",
-        )
-
-    # —— P1：转化速率达标 -> 收割 ——
-    # 依据：收割判据是「转化速率」，不是 ACoS（见 verification.md V17）
-    orders_per_week = row.orders / max(row.running_days, 1) * 7
-    if orders_per_week >= 2:
-        return Verdict(
-            row.term, "加价",
-            f"转化速率 {orders_per_week:.1f} 单/周 ≥ 2，建议独立 Exact 活动并加价（ACoS 只用于定出价）",
-            "P1",
         )
 
     # —— P1：ACoS 在目标与盈亏线之间 ——

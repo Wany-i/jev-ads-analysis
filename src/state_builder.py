@@ -127,10 +127,11 @@ class TermRow:
     cpc: float = field(init=False)
     click_threshold: float = field(init=False)   # 1 / CVR，下限 5
     effective_cvr: float = field(init=False)     # 实际用于推导阈值的 CVR
-
-# 品类兜底 CVR：单词自身无转化时用它来推 1/CVR
-    # 依据：独立实现明确要求 "Fall back to your catalog median conversion rate
-    # if a product doesn't have its own."（见 amazon-ads-optimization/verification.md V2）
+    # 品类兜底 CVR：单词自身无转化时用它来推 1/CVR。
+    # 依据：独立实现要求 "Fall back to your catalog median conversion rate
+    # if a product doesn't have its own."（见 amazon-ads-optimization 的 verification.md V2）
+    # 注意：它只能在读完整张表后才知道（见 load_rows），因此构造时通常为 0，
+    # 设置之后必须调用 refresh() 重算，否则 click_threshold 会停在 0（等于永不判断）。
     fallback_cvr: float = 0.0
 
     def __post_init__(self) -> None:
@@ -138,11 +139,19 @@ class TermRow:
         self.cvr = (self.orders / self.clicks) if self.clicks > 0 else 0.0
         self.ctr = (self.clicks / self.impressions) if self.impressions > 0 else 0.0
         self.cpc = (self.spend / self.clicks) if self.clicks > 0 else 0.0
-        # 动态点击阈值：按本品 CVR 推导，绝对下限 5（见 amazon-ads-optimization/references/verification.md V2/V28）
-# 动态点击阈值 = 1 ÷ CVR；单词无转化时退回品类兜底 CVR
+        self.refresh()
+
+    def refresh(self) -> None:
+        """重算依赖 fallback_cvr 的派生量。
+
+        fallback_cvr 是品类级参数，只有读完整张表才知道，构造时拿不到。
+        如果设置后不重算，click_threshold 会停在 0 —— 等于「永远不判断」，
+        这是曾经踩过的 bug（零单词全部被误判为「保持」）。
+        """
         eff_cvr = self.cvr if self.cvr > 0 else self.fallback_cvr
         self.click_threshold = max(5.0, round(1.0 / eff_cvr)) if eff_cvr > 0 else 0.0
         self.effective_cvr = eff_cvr
+
 
     def match_type_cn(self) -> str | None:
         """归一匹配方式；无法归一时返回 None（由调用方决定是否跳过该字段）。"""
@@ -220,10 +229,7 @@ def load_rows(path: str | Path, running_days: int = 30, current_bid: float = 0.0
     catalog_cvr = (tot_orders / tot_clicks) if tot_clicks > 0 else 0.0
     for r in rows:
         r.fallback_cvr = catalog_cvr
-        # 重算依赖兜底值的派生量
-        eff = r.cvr if r.cvr > 0 else catalog_cvr
-        r.effective_cvr = eff
-        r.click_threshold = max(5.0, round(1.0 / eff)) if eff > 0 else 0.0
+        r.refresh()
     return rows
 
 

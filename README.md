@@ -4,6 +4,7 @@
 > 规则层出可追溯结论，Jev 出独立第二意见，**分歧即信号**。
 > 端到端跑通，输出可直接落到**飞书多维表格**供人复核。
 
+[![CI](https://github.com/Wany-i/jev-ads-analysis/actions/workflows/ci.yml/badge.svg)](https://github.com/Wany-i/jev-ads-analysis/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
@@ -203,6 +204,7 @@ jev-ads-analysis/
 原创内容 [MIT](LICENSE)；第三方来源见 [NOTICE.md](NOTICE.md)。
 
 > 本项目与 Amazon.com, Inc.、TypeSafe AI 均无隶属或背书关系。
+
 
 
 

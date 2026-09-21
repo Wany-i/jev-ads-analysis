@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: 测试（Python ${{ matrix.python-version }}）
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # 本项目零第三方依赖，不需要 pip install
+      - name: 单元测试
+        run: python -m unittest discover -s tests -v
+
+      - name: 仓库卫生与完整性检查
+        run: python tools/check_repo.py
+
+      - name: 端到端干跑（不联网、不需要 API Key）
+        run: |
+          python src/pipeline.py \
+            --input examples/input-sample.csv \
+            --price 39.99 --cost 8 --fba 7.5 --first-leg 3 \
+            --commission-rate 15 --return-rate 5 \
+            --target-acos 25 --running-days 30 --bid 0.85 \
+            --out /tmp/pipeline-out.json
+          python - <<'PY'
+          import json, sys
+          d = json.load(open("/tmp/pipeline-out.json", encoding="utf-8"))
+          s = d["summary"]
+          print("summary:", json.dumps(s, ensure_ascii=False))
+          # 未配 API Key 时必须全部落在「待标定」，不能有任何自动执行
+          assert s["总词数"] == 7, s
+          assert s["待标定"] == 7, s
+          assert s["自动执行"] == 0, s
+          assert s["人工复核"] == 0, s
+          # 每行必须带可追溯依据 —— 这是本项目的核心承诺
+          for r in d["rows"]:
+              assert r["规则层依据"].strip(), r
+              assert r["Jev动作"] == "未接入", r
+          print("✓ 端到端断言通过")
+          PY
+
+      - name: 数据文件可解析
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, "src")
+          from state_builder import load_rows
+          rows = load_rows("work/dataset-redhen-45.csv", running_days=30, current_bid=1.5)
+          assert len(rows) == 45, len(rows)
+          assert all(r.click_threshold >= 5 for r in rows), "阈值下限失效"
+          print(f"✓ 45 词数据集解析通过，品类兜底 CVR = {rows[0].fallback_cvr:.4f}")
+          PY
