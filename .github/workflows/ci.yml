@@ -19,9 +19,9 @@ jobs:
         python-version: ["3.10", "3.12"]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -68,3 +68,4 @@ jobs:
           assert all(r.click_threshold >= 5 for r in rows), "阈值下限失效"
           print(f"✓ 45 词数据集解析通过，品类兜底 CVR = {rows[0].fallback_cvr:.4f}")
           PY
+
