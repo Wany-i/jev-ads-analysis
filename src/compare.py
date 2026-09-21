@@ -62,10 +62,22 @@ def compare(rule: Verdict, jev: JevVerdict) -> Comparison:
     disposition = "自动执行"
 
     if jev.action == "未接入":
-        diverged = False
-        disposition = "待标定"
-        note = jev.note or "Jev 层未接入，仅使用规则层结论"
-    elif jev.action == rule.action:
+        # Jev 未接入：只出规则层结论，一律标记待标定。
+        # 必须在这里直接返回 —— 否则会落到下面的高风险分支，
+        # 把"待标定"错误覆盖成"人工复核"（实跑发现的 bug）。
+        return Comparison(
+            term=rule.term,
+            rule_action=rule.action,
+            rule_reason=rule.reason,
+            rule_priority=rule.priority,
+            jev_action=jev.action,
+            jev_confidence=jev.confidence,
+            jev_gate=jev.gate,
+            diverged=False,
+            disposition="待标定",
+            note=jev.note or "Jev 层未接入，仅使用规则层结论",
+        )
+    if jev.action == rule.action:
         note = f"两层一致（Jev 置信度 {jev.confidence:.2f}）"
     else:
         key = (rule.action, jev.action)
@@ -112,3 +124,4 @@ def summarize(rows: list[Comparison]) -> dict:
         "人工复核": sum(1 for r in rows if r.disposition == "人工复核"),
         "待标定": sum(1 for r in rows if r.disposition == "待标定"),
     }
+
