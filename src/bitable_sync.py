@@ -55,6 +55,17 @@ SYNC_FIELDS = [
 
 # CellValue 类型约定（见 lark-base-cell-value 参考）
 SELECT_FIELDS = {"站点", "匹配方式", "规则层动作", "规则层优先级", "Jev动作", "处置"}
+# select 字段的合法选项白名单：值不在其中就跳过该字段。
+# 教训：redhen 数据集里自动广告的 Match Type 是 "-"，一个非法值会让整批 45 条写入全部失败
+# （API 报 not_found: Provide an existing option value）。宁可少写一个字段，也不要整批失败。
+VALID_SELECT = {
+    "站点": {"US", "UK", "DE", "JP"},
+    "匹配方式": {"自动", "广泛", "词组", "精准", "商品投放"},
+    "规则层动作": {"加价", "降价", "暂停", "保持", "否定"},
+    "规则层优先级": {"P0", "P1", "P2"},
+    "Jev动作": {"加价", "降价", "暂停", "保持", "否定"},
+    "处置": {"自动执行", "人工复核", "待标定"},
+}
 RATIO_FIELDS = {"目标ACOS", "实测ACOS", "盈亏平衡ACOS"}
 
 
@@ -68,6 +79,9 @@ def _to_record(row: dict) -> dict:
         if k in RATIO_FIELDS and isinstance(v, (int, float)):
             fields[k] = round(float(v), 4)
         elif k in SELECT_FIELDS:
+            allowed = VALID_SELECT.get(k)
+            if allowed and v not in allowed:
+                continue             # 非法选项直接跳过，不让整批写入失败
             fields[k] = [v]          # select 的 CellValue 必须是数组
         else:
             fields[k] = v            # text / number / checkbox 直接传

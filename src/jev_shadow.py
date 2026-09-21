@@ -29,12 +29,16 @@ API_KEY_ENV = "OPENROUTER_API_KEY"
 
 # —— 分动作门控阈值（来自 jev-decision-layer/registry/ad_keyword_action.json）——
 # 低风险动作阈值低，高风险动作阈值高：keep 错了只是少赚，pause/negate 错了直接丢流量
+# 阈值来自 2026-09-21 首次影子对照标定（45 个真实关键词，见 docs/04-阈值标定.md）。
+# 依据：与规则层一致的样本置信度均值 0.820，分歧组仅 0.555（confidence 有区分度）；
+# 一致率曲线在 0.80 出现拐点（覆盖率 57.8% / auto 子集一致率 96.2%）。
+# 低风险动作门槛低、高风险动作门槛高：keep 错了只是少赚，pause/negate 错了直接丢流量。
 GATE_THRESHOLDS = {
-    "加价": 0.85,   # raise
-    "降价": 0.70,   # lower
-    "暂停": 0.90,   # pause
-    "保持": 0.50,   # keep
-    "否定": 0.75,   # negate
+    "加价": 0.85,   # raise  —— 样本仅 2 条，未调整
+    "降价": 0.80,   # lower  —— 由 0.70 上调至一致率拐点
+    "暂停": 0.90,   # pause  —— 最高风险，维持
+    "保持": 0.60,   # keep   —— 由 0.50 上调（0.50~0.60 区间一致率仅 86%）
+    "否定": 0.85,   # negate —— 由 0.75 上调（不可逆，且本次否定存在分歧）
 }
 DEFAULT_THRESHOLD = 0.70
 # 无效花费概率超过此值时，无论置信度多高都转人工（不可轻易回滚的动作）
@@ -194,3 +198,4 @@ def judge(term: str, state: dict, *, dry_run: bool = True) -> JevVerdict:
 def judge_all(rows: list[dict], *, dry_run: bool = True) -> list[JevVerdict]:
     """rows: [{"term": ..., "state": {...}}, ...]"""
     return [judge(r["term"], r["state"], dry_run=dry_run) for r in rows]
+

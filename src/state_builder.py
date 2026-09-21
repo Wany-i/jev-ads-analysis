@@ -29,7 +29,12 @@ MATCH_TYPE_CN = {
     "auto": "自动", "automatic": "自动",
     "broad": "广泛", "phrase": "词组", "exact": "精准",
     "product targeting": "商品投放", "asin": "商品投放",
+    # 真实报表里，自动广告的 Match Type 常为空或 "-"（没有匹配方式的概念）
+    "-": "自动", "": "自动", "close match": "自动", "loose match": "自动",
+    "substitutes": "自动", "complements": "自动",
 }
+# 归一后的合法取值（与多维表格 select 选项对齐）
+VALID_MATCH_TYPES = {"自动", "广泛", "词组", "精准", "商品投放"}
 
 
 def _norm(s: str) -> str:
@@ -139,6 +144,11 @@ class TermRow:
         self.click_threshold = max(5.0, round(1.0 / eff_cvr)) if eff_cvr > 0 else 0.0
         self.effective_cvr = eff_cvr
 
+    def match_type_cn(self) -> str | None:
+        """归一匹配方式；无法归一时返回 None（由调用方决定是否跳过该字段）。"""
+        v = MATCH_TYPE_CN.get((self.match_type or "").strip().lower())
+        return v if v in VALID_MATCH_TYPES else None
+
     def to_jev_state(self, econ: Economics, target_acos: float) -> dict[str, Any]:
         """产出 Jev state —— 只含判断需要的最小字段集。"""
         return {
@@ -147,7 +157,7 @@ class TermRow:
             "盈亏平衡ACOS": round(econ.break_even_acos(), 4),
             "本次判断对象": {
                 "关键词": self.term,
-                "匹配方式": MATCH_TYPE_CN.get(self.match_type.lower(), self.match_type or "未知"),
+                "匹配方式": self.match_type_cn() or "未知",
                 "曝光": int(self.impressions),
                 "点击": int(self.clicks),
                 "花费": round(self.spend, 2),

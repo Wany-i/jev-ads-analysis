@@ -83,7 +83,7 @@ def run(args: argparse.Namespace) -> dict:
             "关键词": r.term,
             "站点": "US",
                 # 归一成中文，与多维表格的 select 选项对齐
-                "匹配方式": MATCH_TYPE_CN.get((r.match_type or "").lower(), r.match_type or "未知"),
+                "匹配方式": r.match_type_cn() or "未知",
             "曝光": int(r.impressions),
             "点击": int(r.clicks),
             "花费": round(r.spend, 2),
